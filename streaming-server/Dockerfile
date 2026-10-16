@@ -2,39 +2,23 @@
 # StreamURU — Streaming Server (UDP/WebRTC)
 # Dockerfile
 # ─────────────────────────────────────────────────────────────────
-# ETAPA 1: Builder — instala dependencias (incluyendo compilación
-#           nativa de node-datachannel)
-# ─────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
-
-# Dependencias de compilación para node-datachannel (bindings nativos C++)
-# cmake, g++, make y python3 son requeridos por node-gyp
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    cmake \
-    linux-headers \
-    openssl-dev
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Copiar manifiestos primero para aprovechar el cache de capas Docker
 COPY package.json ./
 
-# Instalar dependencias en modo producción
-# --ignore-scripts=false permite que node-datachannel compile su addon nativo
+# Instalar dependencias (en Debian bookworm node-datachannel descarga binarios precompilados sin compilar C++)
 RUN npm install --omit=dev
 
 # ─────────────────────────────────────────────────────────────────
 # ETAPA 2: Runtime — imagen final liviana
 # ─────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS runtime
+FROM node:20-bookworm-slim AS runtime
 
-# Librerías de runtime necesarias para el addon nativo de node-datachannel
-RUN apk add --no-cache \
-    libstdc++ \
-    openssl
+# Instalar curl para healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Crear directorio de trabajo y asignar al usuario no-root 'node'
 WORKDIR /app
@@ -55,7 +39,7 @@ EXPOSE 5000
 
 # Healthcheck: verifica que el servidor HTTP responde
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:5000/health || exit 1
 
 # Comando de inicio
 CMD ["node", "src/server.js"]

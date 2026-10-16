@@ -243,6 +243,13 @@ const remove = async (req, res) => {
       console.warn('[videoController.remove] Error al eliminar objeto de MinIO:', minioErr.message);
     }
 
+    return res.status(200).json({ message: 'Video eliminado exitosamente.' });
+  } catch (err) {
+    console.error('[videoController.remove]', err);
+    return res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};
+
 /**
  * GET /api/videos/mine
  * Lista todos los videos del usuario autenticado (public, unlisted, private).
@@ -269,4 +276,3 @@ const listMine = async (req, res) => {
 };
 
 module.exports = { upload, list, getById, update, remove, listMine };
-
