@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   # Red pública: accesible desde el host (Frontend, Backend API, Streaming)
   public-net:
@@ -93,7 +91,7 @@ services:
   # BUCKET STORAGE SELF-HOSTED (MinIO) - RED PRIVADA
   # ================================================
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: streamuru-minio
     command: server /data --console-address ":9001"
     environment:
