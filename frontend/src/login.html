@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamURU — Iniciar sesión</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="navbar px-4 md:px-8 py-3 flex items-center justify-between">
+    <a href="/index.html" class="logo">StreamURU</a>
+    <a href="/index.html" class="btn-secondary text-sm">← Volver al inicio</a>
+  </header>
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <main class="flex-1 flex items-center justify-center p-4">
+    <div class="w-full max-w-md fade-in">
+
+      <!-- Logo centrado -->
+      <div class="text-center mb-8">
+        <span class="logo text-4xl">StreamURU</span>
+        <p class="text-gray-400 text-sm mt-2">Tu plataforma de streaming UDP</p>
+      </div>
+
+      <!-- Card del formulario -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+
+        <!-- Tabs Login / Registro -->
+        <div class="flex border-b border-gray-800">
+          <button class="tab-btn active" id="tab-login"
+                  onclick="switchTab('login')">Iniciar sesión</button>
+          <button class="tab-btn" id="tab-register"
+                  onclick="switchTab('register')">Crear cuenta</button>
+        </div>
+
+        <div class="p-6">
+
+          <!-- ─── Mensaje de error / éxito ─── -->
+          <div id="auth-message" class="hidden mb-4 px-3 py-2 rounded-lg text-sm"></div>
+
+          <!-- ─── Formulario Login ─── -->
+          <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+            <div>
+              <label class="form-label" for="login-email">Correo electrónico</label>
+              <input id="login-email" type="email" class="form-input"
+                     placeholder="tu@email.com" required autocomplete="email">
+            </div>
+            <div>
+              <label class="form-label" for="login-password">Contraseña</label>
+              <input id="login-password" type="password" class="form-input"
+                     placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            <button type="submit" id="btn-login-submit" class="btn-primary w-full mt-2">
+              Iniciar sesión
+            </button>
+          </form>
+
+          <!-- ─── Formulario Registro ─── -->
+          <form id="form-register" onsubmit="handleRegister(event)"
+                class="space-y-4 hidden">
+            <div>
+              <label class="form-label" for="reg-username">Nombre de usuario</label>
+              <input id="reg-username" type="text" class="form-input"
+                     placeholder="tuapodo" required autocomplete="username">
+            </div>
+            <div>
+              <label class="form-label" for="reg-email">Correo electrónico</label>
+              <input id="reg-email" type="email" class="form-input"
+                     placeholder="tu@email.com" required autocomplete="email">
+            </div>
+            <div>
+              <label class="form-label" for="reg-password">Contraseña</label>
+              <input id="reg-password" type="password" class="form-input"
+                     placeholder="Mínimo 8 caracteres" required minlength="8"
+                     autocomplete="new-password">
+            </div>
+            <div>
+              <label class="form-label" for="reg-password2">Confirmar contraseña</label>
+              <input id="reg-password2" type="password" class="form-input"
+                     placeholder="Repite la contraseña" required
+                     autocomplete="new-password">
+            </div>
+            <button type="submit" id="btn-register-submit" class="btn-primary w-full mt-2">
+              Crear cuenta
+            </button>
+          </form>
+
+        </div>
+      </div>
+
+      <p class="text-center text-gray-600 text-xs mt-4">
+        Al continuar aceptas los Términos de Uso de StreamURU
+      </p>
+    </div>
+  </main>
+
+  <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+  <script type="module">
+    import { login, register, isLoggedIn } from '/js/auth.js';
+
+    // Si ya está logueado, redirigir
+    if (isLoggedIn()) window.location.href = '/index.html';
+
+    /** Alterna entre los tabs de login y registro. */
+    window.switchTab = (tab) => {
+      const isLogin = tab === 'login';
+      document.getElementById('form-login')   .classList.toggle('hidden', !isLogin);
+      document.getElementById('form-register').classList.toggle('hidden',  isLogin);
+      document.getElementById('tab-login')    .classList.toggle('active',  isLogin);
+      document.getElementById('tab-register') .classList.toggle('active', !isLogin);
+      clearMessage();
+    };
+
+    function showMessage(msg, isError = true) {
+      const el = document.getElementById('auth-message');
+      el.textContent = msg;
+      el.className = `mb-4 px-3 py-2 rounded-lg text-sm ${
+        isError ? 'bg-red-900/60 text-red-300' : 'bg-green-900/60 text-green-300'
+      }`;
+      el.classList.remove('hidden');
+    }
+
+    function clearMessage() {
+      const el = document.getElementById('auth-message');
+      el.textContent = '';
+      el.classList.add('hidden');
+    }
+
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.disabled = loading;
+      btn.textContent = loading ? 'Procesando…' : btn.dataset.label || btn.textContent;
+    }
+
+    /** Handler para el formulario de login. */
+    window.handleLogin = async (e) => {
+      e.preventDefault();
+      clearMessage();
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      setLoading('btn-login-submit', true);
+      try {
+        await login(email, password);
+        // login() redirige, este código no se alcanza en caso de éxito
+      } catch (err) {
+        showMessage(err.message || 'Error al iniciar sesión');
+      } finally {
+        setLoading('btn-login-submit', false);
+      }
+    };
+
+    /** Handler para el formulario de registro. */
+    window.handleRegister = async (e) => {
+      e.preventDefault();
+      clearMessage();
+      const username  = document.getElementById('reg-username').value.trim();
+      const email     = document.getElementById('reg-email').value.trim();
+      const password  = document.getElementById('reg-password').value;
+      const password2 = document.getElementById('reg-password2').value;
+
+      if (password !== password2) return showMessage('Las contraseñas no coinciden.');
+
+      setLoading('btn-register-submit', true);
+      try {
+        await register(username, email, password);
+      } catch (err) {
+        showMessage(err.message || 'Error al crear la cuenta');
+      } finally {
+        setLoading('btn-register-submit', false);
+      }
+    };
+  </script>
+</body>
+</html>

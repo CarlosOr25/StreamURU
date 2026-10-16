@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamURU — Catálogo de Videos</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="navbar px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+    <a href="/index.html" class="logo">StreamURU</a>
+
+    <nav class="flex items-center gap-6 text-sm font-medium text-gray-300">
+      <a href="/index.html" class="hover:text-white transition-colors">Inicio</a>
+      <a href="/upload.html" id="nav-upload" class="hidden hover:text-white transition-colors">Subir Video</a>
+      <span id="user-info" class="text-indigo-400 text-xs"></span>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href="/login.html"  id="btn-login"
+         class="btn-secondary text-sm">Iniciar sesión</a>
+      <button id="btn-logout"
+              class="btn-primary text-sm hidden">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ HERO ═══════════════════ -->
+  <section class="px-4 md:px-8 py-10 text-center fade-in">
+    <h1 class="text-3xl md:text-4xl font-extrabold mb-2">
+      Descubre videos en StreamURU
+    </h1>
+    <p class="text-gray-400 max-w-xl mx-auto text-sm">
+      Plataforma de streaming con tecnología UDP/WebRTC.
+      Sube, comparte y disfruta contenido de alta calidad.
+    </p>
+  </section>
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <main class="flex-1 px-4 md:px-8 pb-12">
+    <!-- Barra de búsqueda y contador -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+      <p class="text-gray-400 text-sm">
+        <span id="video-count" class="text-white font-semibold">—</span> disponibles
+      </p>
+      <!-- Búsqueda (visual — funcionalidad de filtrado en frontend) -->
+      <input id="search-input" type="text" placeholder="Buscar videos…"
+             class="form-input w-full sm:w-72 text-sm"
+             oninput="filterCards(this.value)">
+    </div>
+
+    <!-- Grid de videos -->
+    <div id="video-grid" class="video-grid">
+      <!-- Las tarjetas se inyectan por catalog.js -->
+      <div class="col-span-full text-center py-16 text-gray-400">
+        <div class="pulse-dot inline-block w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
+        Cargando catálogo…
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer class="border-t border-gray-800 py-5 text-center text-gray-600 text-xs">
+    © 2025 StreamURU · Proyecto Seguridad Informática
+  </footer>
+
+  <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+  <script type="module">
+    import { syncAuthUI, logout } from '/js/auth.js';
+    import { loadCatalog }        from '/js/catalog.js';
+
+    // Sincronizar UI del header
+    syncAuthUI();
+    document.getElementById('btn-logout')?.addEventListener('click', logout);
+
+    // Cargar catálogo
+    loadCatalog();
+
+    // Filtrado en cliente
+    window.filterCards = (query) => {
+      const q = query.toLowerCase();
+      document.querySelectorAll('#video-grid article').forEach((card) => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(q) ? '' : 'none';
+      });
+    };
+  </script>
+</body>
+</html>

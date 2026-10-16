@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamURU — Subir Video</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="navbar px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+    <a href="/index.html" class="logo">StreamURU</a>
+
+    <nav class="flex items-center gap-6 text-sm font-medium text-gray-300">
+      <a href="/index.html"   class="hover:text-white transition-colors">Inicio</a>
+      <a href="/upload.html"  class="text-indigo-400">Subir Video</a>
+      <span id="user-info"   class="text-indigo-300 text-xs"></span>
+    </nav>
+
+    <button id="btn-logout" class="btn-primary text-sm hidden">Cerrar sesión</button>
+    <a href="/login.html" id="btn-login" class="btn-secondary text-sm">Iniciar sesión</a>
+  </header>
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <main class="flex-1 flex items-start justify-center p-4 md:p-8">
+    <div class="w-full max-w-2xl fade-in">
+
+      <h1 class="text-2xl font-bold mb-1">Subir video</h1>
+      <p class="text-gray-400 text-sm mb-8">
+        Sube tu contenido y compártelo con la comunidad de StreamURU.
+      </p>
+
+      <!-- Card del formulario -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
+        <form id="upload-form" class="space-y-5" novalidate>
+
+          <!-- Título -->
+          <div>
+            <label class="form-label" for="title">Título <span class="text-red-400">*</span></label>
+            <input id="title" name="title" type="text" class="form-input"
+                   placeholder="Dale un título atractivo a tu video" required maxlength="200">
+          </div>
+
+          <!-- Descripción -->
+          <div>
+            <label class="form-label" for="description">Descripción</label>
+            <textarea id="description" name="description" class="form-textarea" rows="3"
+                      placeholder="Cuéntales a los espectadores de qué trata el video…"
+                      maxlength="5000"></textarea>
+          </div>
+
+          <!-- Visibilidad -->
+          <div>
+            <label class="form-label" for="visibility">Visibilidad</label>
+            <select id="visibility" name="visibility" class="form-select">
+              <option value="public">🌍 Público — Visible para todos</option>
+              <option value="unlisted">🔗 Oculto — Solo con enlace</option>
+              <option value="private">🔒 Privado — Solo yo</option>
+            </select>
+          </div>
+
+          <!-- Selector de archivo -->
+          <div>
+            <label class="form-label">Archivo de video <span class="text-red-400">*</span></label>
+            <label for="video-file" class="drop-zone block cursor-pointer"
+                   id="drop-zone"
+                   ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                   ondragleave="this.classList.remove('drag-over')"
+                   ondrop="handleDrop(event)">
+              <svg class="mx-auto mb-3 w-10 h-10 text-gray-500" fill="none"
+                   stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021
+                         18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+              </svg>
+              <p id="file-label" class="text-gray-400 text-sm">
+                Arrastra tu video aquí o <span class="text-indigo-400 underline">selecciona un archivo</span>
+              </p>
+              <p class="text-gray-600 text-xs mt-1">MP4, WebM, MKV — máx. 2 GB</p>
+              <input id="video-file" type="file" accept="video/*" class="hidden">
+            </label>
+          </div>
+
+          <!-- Barra de progreso (oculta hasta que comienza la subida) -->
+          <div id="progress-wrap" class="hidden space-y-1">
+            <div class="flex justify-between text-xs text-gray-400">
+              <span>Subiendo…</span>
+              <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-track">
+              <div id="progress-bar" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Mensaje de estado -->
+          <div id="upload-status"></div>
+
+          <!-- Botón de envío -->
+          <button type="submit" id="submit-btn" class="btn-primary w-full py-3 text-base">
+            Subir Video
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer class="border-t border-gray-800 py-5 text-center text-gray-600 text-xs">
+    © 2025 StreamURU · Proyecto Seguridad Informática
+  </footer>
+
+  <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+  <script type="module">
+    import { syncAuthUI, logout } from '/js/auth.js';
+    import { initUpload }         from '/js/upload.js';
+
+    syncAuthUI();
+    document.getElementById('btn-logout')?.addEventListener('click', logout);
+    initUpload();
+
+    // Drag-and-drop sobre el drop-zone
+    window.handleDrop = (e) => {
+      e.preventDefault();
+      document.getElementById('drop-zone').classList.remove('drag-over');
+      const file = e.dataTransfer?.files[0];
+      if (!file) return;
+      const input = document.getElementById('video-file');
+      // Asignar el archivo al input (via DataTransfer)
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      document.getElementById('file-label').textContent = file.name;
+      document.getElementById('file-label').classList.add('text-indigo-300');
+    };
+  </script>
+</body>
+</html>

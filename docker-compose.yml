@@ -1,0 +1,110 @@
+version: "3.9"
+
+networks:
+  # Red pública: accesible desde el host (Frontend, Backend API, Streaming)
+  public-net:
+    driver: bridge
+  # Red privada: solo contenedores internos (DB, MinIO)
+  backend-net:
+    driver: bridge
+
+volumes:
+  pg-data:
+  minio-data:
+
+services:
+
+  # ================================================
+  # FRONTEND (Nginx sirviendo archivos estáticos)
+  # ================================================
+  frontend:
+    build: ./frontend
+    container_name: streamuru-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - public-net
+    depends_on:
+      - backend
+      - streaming-server
+    restart: unless-stopped
+
+  # ================================================
+  # BACKEND API (Node.js / Express - HTTP/TCP)
+  # ================================================
+  backend:
+    build: ./backend
+    container_name: streamuru-backend
+    ports:
+      - "4000:4000"
+    env_file: .env
+    networks:
+      - public-net
+      - backend-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  # ================================================
+  # STREAMING SERVER (UDP / WebRTC)
+  # ================================================
+  streaming-server:
+    build: ./streaming-server
+    container_name: streamuru-streaming
+    ports:
+      - "5000:5000"
+      # Rango de puertos UDP para WebRTC
+      - "50000-50100:50000-50100/udp"
+    env_file: .env
+    networks:
+      - public-net
+      - backend-net
+    depends_on:
+      - minio
+    restart: unless-stopped
+
+  # ================================================
+  # BASE DE DATOS (PostgreSQL) - RED PRIVADA
+  # ================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: streamuru-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      # Script de inicialización automática de tablas
+      - ./backend/src/models/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - backend-net   # Solo accesible internamente, SIN puerto expuesto al host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ================================================
+  # BUCKET STORAGE SELF-HOSTED (MinIO) - RED PRIVADA
+  # ================================================
+  minio:
+    image: minio/minio:latest
+    container_name: streamuru-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    ports:
+      # Consola de administración MinIO (solo desarrollo, remover en producción)
+      - "9001:9001"
+    networks:
+      - backend-net   # Sin puerto 9000 expuesto al host (solo acceso interno)
+    restart: unless-stopped
+

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamURU — Reproductor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="navbar px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+    <a href="/index.html" class="logo">StreamURU</a>
+
+    <nav class="flex items-center gap-6 text-sm font-medium text-gray-300">
+      <a href="/index.html"  class="hover:text-white transition-colors">← Catálogo</a>
+      <a href="/upload.html" id="nav-upload" class="hidden hover:text-white transition-colors">Subir Video</a>
+      <span id="user-info"  class="text-indigo-400 text-xs"></span>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href="/login.html"  id="btn-login"  class="btn-secondary text-sm">Iniciar sesión</a>
+      <button               id="btn-logout" class="btn-primary   text-sm hidden">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <main class="flex-1 px-4 md:px-8 py-6 max-w-5xl mx-auto w-full">
+
+    <!-- ─── Error fatal (oculto por defecto) ─── -->
+    <div id="player-error"
+         class="hidden mb-6 px-4 py-3 bg-red-900/60 border border-red-700 rounded-xl
+                text-red-300 text-sm">
+    </div>
+
+    <!-- ─── Reproductor de video ─── -->
+    <div class="player-wrapper mb-4 fade-in shadow-2xl">
+      <video id="stream-video"
+             class="w-full h-full"
+             controls
+             playsinline
+             preload="auto">
+        Tu navegador no soporta la reproducción de video.
+      </video>
+    </div>
+
+    <!-- ─── Badge de estado de conexión UDP/WebRTC ─── -->
+    <div class="flex items-center gap-3 mb-6">
+      <span id="connection-status"
+            class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm
+                   font-medium bg-gray-700 text-gray-200">
+        <span class="pulse-dot w-2 h-2 bg-yellow-400 rounded-full inline-block"></span>
+        Iniciando…
+      </span>
+      <span class="text-gray-600 text-xs">Protocolo: WebRTC / UDP</span>
+    </div>
+
+    <!-- ─── Información del video ─── -->
+    <section class="bg-gray-900 border border-gray-800 rounded-2xl p-5 md:p-6 fade-in">
+      <h1 id="video-title"
+          class="text-xl md:text-2xl font-bold mb-2 text-white">
+        Cargando…
+      </h1>
+
+      <div class="flex items-center gap-3 mb-4 text-sm text-gray-400">
+        <span>Publicado por
+          <strong id="video-owner" class="text-gray-200">—</strong>
+        </span>
+      </div>
+
+      <p id="video-description" class="text-gray-400 text-sm leading-relaxed whitespace-pre-line">
+        —
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer class="border-t border-gray-800 py-5 text-center text-gray-600 text-xs">
+    © 2025 StreamURU · Proyecto Seguridad Informática
+  </footer>
+
+  <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+  <script type="module">
+    import { syncAuthUI, logout } from '/js/auth.js';
+    import { initPlayer }         from '/js/player.js';
+
+    syncAuthUI();
+    document.getElementById('btn-logout')?.addEventListener('click', logout);
+
+    // Inicializar el reproductor WebRTC
+    initPlayer();
+  </script>
+</body>
+</html>
