@@ -8,15 +8,15 @@
 const Minio = require('minio');
 
 // Nombre del bucket donde se almacenarán los videos
-const BUCKET_NAME = process.env.MINIO_BUCKET || 'streamuru-videos';
+const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || process.env.MINIO_BUCKET || 'streamuru-videos';
 
 // Inicializar cliente MinIO con credenciales del entorno
 const minioClient = new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT || 'localhost',
   port: Number(process.env.MINIO_PORT) || 9000,
   useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+  accessKey: process.env.MINIO_ROOT_USER || process.env.MINIO_ACCESS_KEY || 'minioadmin',
+  secretKey: process.env.MINIO_ROOT_PASSWORD || process.env.MINIO_SECRET_KEY || 'minioadmin',
 });
 
 /**
@@ -24,13 +24,22 @@ const minioClient = new Minio.Client({
  * Se llama al arrancar el servidor.
  * @returns {Promise<void>}
  */
-const ensureBucket = async () => {
-  const exists = await minioClient.bucketExists(BUCKET_NAME);
-  if (!exists) {
-    await minioClient.makeBucket(BUCKET_NAME, process.env.MINIO_REGION || 'us-east-1');
-    console.log(`[MinIO] Bucket '${BUCKET_NAME}' creado.`);
-  } else {
-    console.log(`[MinIO] Bucket '${BUCKET_NAME}' verificado OK.`);
+const ensureBucket = async (retries = 5, delayMs = 2000) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const exists = await minioClient.bucketExists(BUCKET_NAME);
+      if (!exists) {
+        await minioClient.makeBucket(BUCKET_NAME, process.env.MINIO_REGION || 'us-east-1');
+        console.log(`[MinIO] Bucket '${BUCKET_NAME}' creado.`);
+      } else {
+        console.log(`[MinIO] Bucket '${BUCKET_NAME}' verificado OK.`);
+      }
+      return;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      console.warn(`[MinIO] Esperando a que MinIO esté listo (intento ${attempt}/${retries}): ${err.message}`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
   }
 };
 
