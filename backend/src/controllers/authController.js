@@ -26,7 +26,8 @@ const register = async (req, res) => {
   // Verificar errores de validación (express-validator)
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    const errorMsg = errors.array().map((e) => e.msg).join('. ');
+    return res.status(400).json({ error: errorMsg, errors: errors.array() });
   }
 
   const { username, email, password } = req.body;
@@ -75,7 +76,8 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    const errorMsg = errors.array().map((e) => e.msg).join('. ');
+    return res.status(400).json({ error: errorMsg, errors: errors.array() });
   }
 
   const { email, password } = req.body;

@@ -28,7 +28,11 @@ async function handleResponse(res) {
     let message = `HTTP ${res.status}`;
     try {
       const err = await res.json();
-      message = err.message || err.error || message;
+      if (err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+        message = err.errors.map((e) => e.msg || e.message).join(' | ');
+      } else {
+        message = err.message || err.error || message;
+      }
     } catch (_) { /* sin cuerpo JSON */ }
     throw new Error(message);
   }
