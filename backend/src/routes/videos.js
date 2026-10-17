@@ -74,7 +74,7 @@ const idValidation = [
  *  6. uploadVideo    → controlador
  */
 router.post(
-  '/upload',
+  ['/', '/upload'],
   requireAuth,
   upload.single('video'),
   handleMulterError,

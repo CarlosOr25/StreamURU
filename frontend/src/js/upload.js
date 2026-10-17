@@ -73,16 +73,17 @@ export function initUpload() {
     clearStatus(statusMsg);
 
     try {
-      const result = await uploadFile('/api/videos', formData, (pct) => {
+      const result = await uploadFile('/api/videos/upload', formData, (pct) => {
         if (progressBar) progressBar.style.width = `${pct}%`;
         if (progressPct) progressPct.textContent  = `${pct}%`;
       });
 
       // Éxito
       showSuccess(statusMsg, '¡Video subido exitosamente! Redirigiendo…');
+      const videoId = result?.video?.id || result?.id;
       setTimeout(() => {
-        window.location.href = result?.id
-          ? `/player.html?id=${result.id}`
+        window.location.href = videoId
+          ? `/player.html?id=${videoId}`
           : '/index.html';
       }, 1500);
     } catch (err) {
